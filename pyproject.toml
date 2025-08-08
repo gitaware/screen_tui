@@ -1,0 +1,15 @@
+[project]
+name = "screen_tui"
+version = "1.0.0"
+description = "Modern screen session manager with curses UI"
+authors = [{name = "Jeroen Hermans"}]
+license = "MIT"
+readme = "README.md"
+dependencies = ["rich"]
+
+[project.scripts]
+screen_tui = "screen_tui.cli:main"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
