@@ -25,11 +25,14 @@ def main_menu(stdscr):
                 stdscr.addstr(idx + 2, 2, line)
 
         stdscr.addstr(len(sessions) + 4, 2, "n) New session")
-        stdscr.addstr(len(sessions) + 5, 2, "Type <number>[x|d] + Enter to attach (x: -x, d: -rd)")
+        stdscr.addstr(len(sessions) + 5, 2,
+                      "Type <number>[x|d] + Enter to attach (x: -x, d: -rd)")
         if numbuf:
-            stdscr.addstr(len(sessions) + 6, 2, f"Selected: {numbuf}", curses.color_pair(3))
+            stdscr.addstr(len(sessions) + 6, 2,
+                          f"Selected: {numbuf}", curses.color_pair(3))
         if err:
-            stdscr.addstr(len(sessions) + 7, 2, f"Error: {err}", curses.color_pair(2))
+            stdscr.addstr(len(sessions) + 7, 2,
+                          f"Error: {err}", curses.color_pair(2))
         stdscr.refresh()
 
     curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_CYAN)
@@ -58,7 +61,13 @@ def main_menu(stdscr):
                     mode = m.group(2) or ''
                     if 0 <= idx < len(sessions):
                         pid = sessions[idx][0]
+                        curses.endwin()  # leave curses mode before screen
                         code, msg = attach_session(pid, mode)
+                        # Reinit curses after returning
+                        stdscr = curses.initscr()
+                        curses.cbreak()
+                        stdscr.keypad(True)
+                        curses.curs_set(0)
                         error = msg if code else None
                     else:
                         error = f"Incorrect selection: {number_buffer}"
@@ -67,7 +76,12 @@ def main_menu(stdscr):
                 number_buffer = ""
             else:
                 pid = sessions[current_row][0]
+                curses.endwin()
                 code, msg = attach_session(pid)
+                stdscr = curses.initscr()
+                curses.cbreak()
+                stdscr.keypad(True)
+                curses.curs_set(0)
                 error = msg if code else None
 
         elif key == curses.KEY_UP:
