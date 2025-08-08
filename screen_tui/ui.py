@@ -1,6 +1,7 @@
 # screen_tui/ui.py
 import curses
 import os
+import re
 from .core import get_sessions, attach_session, start_session
 
 def main_menu(stdscr):
@@ -24,10 +25,11 @@ def main_menu(stdscr):
                 stdscr.addstr(idx + 2, 2, line)
 
         stdscr.addstr(len(sessions) + 4, 2, "n) New session")
+        stdscr.addstr(len(sessions) + 5, 2, "Type <number>[x|d] + Enter to attach (x: -x, d: -rd)")
         if numbuf:
-            stdscr.addstr(len(sessions) + 5, 2, f"Selected: {numbuf}", curses.color_pair(3))
+            stdscr.addstr(len(sessions) + 6, 2, f"Selected: {numbuf}", curses.color_pair(3))
         if err:
-            stdscr.addstr(len(sessions) + 6, 2, f"Error: {err}", curses.color_pair(2))
+            stdscr.addstr(len(sessions) + 7, 2, f"Error: {err}", curses.color_pair(2))
         stdscr.refresh()
 
     curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_CYAN)
@@ -50,8 +52,6 @@ def main_menu(stdscr):
 
         if key in (curses.KEY_ENTER, 10, 13):
             if number_buffer:
-                # Parse number and optional suffix
-                import re
                 m = re.match(r"^(\d+)([xd])?$", number_buffer)
                 if m:
                     idx = int(m.group(1)) - 1
@@ -70,10 +70,12 @@ def main_menu(stdscr):
                 code, msg = attach_session(pid)
                 error = msg if code else None
 
-        elif key == curses.KEY_UP and current_row > 0:
-            current_row -= 1
-        elif key == curses.KEY_DOWN and current_row < len(sessions) - 1:
-            current_row += 1
+        elif key == curses.KEY_UP:
+            if current_row > 0:
+                current_row -= 1
+        elif key == curses.KEY_DOWN:
+            if current_row < len(sessions) - 1:
+                current_row += 1
         elif key == ord('n'):
             curses.echo()
             stdscr.clear()
