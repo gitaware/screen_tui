@@ -1,6 +1,6 @@
 [project]
 name = "screen_tui"
-version = "1.0.0"
+version = "1.0.1"
 description = "Modern screen session manager with curses UI"
 authors = [{name = "Jeroen Hermans"}]
 license = "MIT"

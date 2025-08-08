@@ -7,8 +7,9 @@ def main_menu(stdscr):
     curses.curs_set(0)
     current_row = 0
     error = None
+    number_buffer = ""  # store digits + optional x/d
 
-    def draw_menu(sessions, highlight, err=None):
+    def draw_menu(sessions, highlight, err=None, numbuf=""):
         stdscr.clear()
         h, w = stdscr.getmaxyx()
 
@@ -23,27 +24,56 @@ def main_menu(stdscr):
                 stdscr.addstr(idx + 2, 2, line)
 
         stdscr.addstr(len(sessions) + 4, 2, "n) New session")
+        if numbuf:
+            stdscr.addstr(len(sessions) + 5, 2, f"Selected: {numbuf}", curses.color_pair(3))
         if err:
             stdscr.addstr(len(sessions) + 6, 2, f"Error: {err}", curses.color_pair(2))
         stdscr.refresh()
 
     curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_CYAN)
     curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
+    curses.init_pair(3, curses.COLOR_YELLOW, curses.COLOR_BLACK)
 
     while True:
         sessions = get_sessions()
-        draw_menu(sessions, current_row, error)
+        draw_menu(sessions, current_row, error, number_buffer)
 
         key = stdscr.getch()
 
-        if key == curses.KEY_UP and current_row > 0:
+        # Handle typing: digits or x/d after digits
+        if ord('0') <= key <= ord('9'):
+            number_buffer += chr(key)
+            continue
+        elif key in (ord('x'), ord('d')) and number_buffer.isdigit():
+            number_buffer += chr(key)
+            continue
+
+        if key in (curses.KEY_ENTER, 10, 13):
+            if number_buffer:
+                # Parse number and optional suffix
+                import re
+                m = re.match(r"^(\d+)([xd])?$", number_buffer)
+                if m:
+                    idx = int(m.group(1)) - 1
+                    mode = m.group(2) or ''
+                    if 0 <= idx < len(sessions):
+                        pid = sessions[idx][0]
+                        code, msg = attach_session(pid, mode)
+                        error = msg if code else None
+                    else:
+                        error = f"Incorrect selection: {number_buffer}"
+                else:
+                    error = f"Incorrect selection: {number_buffer}"
+                number_buffer = ""
+            else:
+                pid = sessions[current_row][0]
+                code, msg = attach_session(pid)
+                error = msg if code else None
+
+        elif key == curses.KEY_UP and current_row > 0:
             current_row -= 1
         elif key == curses.KEY_DOWN and current_row < len(sessions) - 1:
             current_row += 1
-        elif key in (curses.KEY_ENTER, 10, 13):
-            pid = sessions[current_row][0]
-            code, msg = attach_session(pid)
-            error = msg if code else None
         elif key == ord('n'):
             curses.echo()
             stdscr.clear()
@@ -56,3 +86,6 @@ def main_menu(stdscr):
             error = msg if code else None
         elif key == ord('q'):
             break
+        else:
+            number_buffer = ""  # reset if invalid key
+
